@@ -104,13 +104,13 @@ export function Calculadora({ precios = PRECIOS_DEFAULT, onAbrirConfig }) {
       <header className="header-gradient text-white px-5 pt-10 pb-8 relative">
         <div className="max-w-md mx-auto">
           <p className="text-blue-200 text-sm font-medium mb-1 uppercase tracking-widest">
-            Herrería &amp; Aluminio
+            Aluminio
           </p>
           <h1 className="text-3xl font-black leading-tight">
             🪟 Cotizador<br />de Ventanas
           </h1>
           <p className="text-blue-100 mt-2 text-base">
-            Calcula el material global reutilizando sobrantes entre ventanas.
+            Calcula el material.
           </p>
         </div>
 
