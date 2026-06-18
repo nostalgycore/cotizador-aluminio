@@ -267,6 +267,9 @@ export function Calculadora({ precios = PRECIOS_DEFAULT, onAbrirConfig }) {
                 <p className="text-sm font-bold text-slate-600 mb-2 text-center uppercase tracking-wide">
                   Tipo de Vidrio
                 </p>
+                <p className="text-xs text-slate-400 text-center mb-3">
+                  Nota: Todas las hojas estándar miden 1.80 × 2.60 m
+                </p>
                 <div className="grid grid-cols-2 gap-2">
                   {OPCIONES_VIDRIO.map((op) => {
                     const precioActual = precios.vidrio?.[op.id] ?? op.precio ?? 0;
@@ -281,7 +284,7 @@ export function Calculadora({ precios = PRECIOS_DEFAULT, onAbrirConfig }) {
                       >
                         <span className="block">{op.label}</span>
                         <span className={`text-xs font-normal ${tipoVidrio.id === op.id ? "text-cyan-100" : "text-slate-400"}`}>
-                          ${precioActual}/m²
+                          ${precioActual} / Hoja
                         </span>
                       </button>
                     );
@@ -469,7 +472,7 @@ export function Calculadora({ precios = PRECIOS_DEFAULT, onAbrirConfig }) {
                       <div>
                         <p className="font-bold text-cyan-800">{costos.detalle.vidrio.nombre}</p>
                         <p className="text-sm text-cyan-600">
-                          {costos.detalle.vidrio.m2} m² · ${costos.detalle.vidrio.precioUnitario}/m²
+                          {costos.detalle.vidrio.hojas} hoja(s) × ${costos.detalle.vidrio.precioUnitario}/hoja
                         </p>
                       </div>
                       <span className="text-cyan-800 font-black text-lg">

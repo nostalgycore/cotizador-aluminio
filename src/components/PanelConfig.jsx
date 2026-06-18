@@ -147,7 +147,7 @@ export function PanelConfig({ precios, onGuardar, onVolver }) {
               <div key={op.id} className="flex items-center justify-between gap-3">
                 <div className="flex-1">
                   <p className="font-semibold text-slate-700 text-sm">{op.label}</p>
-                  <p className="text-xs text-slate-400">por m²</p>
+                  <p className="text-xs text-slate-400">precio por hoja</p>
                 </div>
                 <div className="flex items-center gap-1 bg-slate-50 border-2 border-slate-200 rounded-xl px-3 py-2 focus-within:border-cyan-400 transition">
                   <span className="text-slate-400 font-bold text-sm">$</span>
