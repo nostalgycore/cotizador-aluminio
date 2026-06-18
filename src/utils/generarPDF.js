@@ -167,9 +167,10 @@ export function generarPDF({ resultado, costos, ventanas, folio, tramoCm, llevaV
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8.5);
     doc.setTextColor(20, 20, 20);
-    doc.text(det.nombre,                        mL + 2,    y + 5);
-    doc.text(`${det.hojas} Hoja(s)`,             COL_CANT,  y + 5, { align: "right" });
-    doc.text(`$${det.costo.toFixed(2)}`,         COL_TOTAL, y + 5, { align: "right" });
+    // Nombre + área informativa en la misma celda
+    doc.text(`${det.nombre}  (Área: ${det.m2} m²)`,  mL + 2,    y + 5);
+    doc.text(`${det.hojas} Hoja(s)`,                  COL_CANT,  y + 5, { align: "right" });
+    doc.text(`$${det.costo.toFixed(2)}`,               COL_TOTAL, y + 5, { align: "right" });
     y += 7;
 
     // Nota informativa debajo del renglón

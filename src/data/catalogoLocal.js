@@ -97,14 +97,14 @@ export function calcularCostosGlobal(resultado, tipoVidrio = null, lineaPulg = "
 
   // Vidrio (precio por HOJA completa, no por m²)
   if (vidrio && tipoVidrio) {
-    const hojas = vidrio.hojasComprar;          // ya es Math.ceil del cálculo
-    const costo = hojas * tipoVidrio.precio;    // hojas × precio/hoja
+    const hojas = vidrio.hojasComprar;
+    const costo = hojas * tipoVidrio.precio;
     detalle.vidrio = {
-      nombre:          `Vidrio ${tipoVidrio.label}`,
-      precioUnitario:  tipoVidrio.precio,        // precio por hoja
+      nombre:          tipoVidrio.label,            // sin prefijo extra (el label ya dice "Vidrio X")
+      precioUnitario:  tipoVidrio.precio,
       unidad:          "hoja",
-      hojas,                                     // cantidad de hojas
-      m2:              vidrio.areaM2Total,        // solo referencia informativa
+      hojas,
+      m2:              +vidrio.areaM2Total.toFixed(2), // dos decimales siempre
       costo:           +costo.toFixed(2),
     };
     subtotalMateriales += costo;

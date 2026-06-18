@@ -471,7 +471,10 @@ export function Calculadora({ precios = PRECIOS_DEFAULT, onAbrirConfig }) {
                     <div className="flex items-center justify-between mb-3">
                       <div>
                         <p className="font-bold text-cyan-800">{costos.detalle.vidrio.nombre}</p>
-                        <p className="text-sm text-cyan-600">
+                        <p className="text-xs text-cyan-500 mt-0.5">
+                          Área a cubrir: {costos.detalle.vidrio.m2} m²
+                        </p>
+                        <p className="text-sm text-cyan-600 mt-1">
                           {costos.detalle.vidrio.hojas} hoja(s) × ${costos.detalle.vidrio.precioUnitario}/hoja
                         </p>
                       </div>
