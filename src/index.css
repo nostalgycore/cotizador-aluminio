@@ -1,0 +1,65 @@
+/* src/index.css */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
+@import "tailwindcss";
+
+:root {
+  --azul-primario: #1e40af;
+  --azul-claro: #3b82f6;
+  --azul-hover: #1d4ed8;
+}
+
+body {
+  font-family: "Inter", sans-serif;
+  background: #f1f5f9;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+/* Inputs tipo calculadora — grandes y fáciles de pulsar */
+.input-calc {
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-align: center;
+  padding: 0.75rem 1rem;
+  border-radius: 1rem;
+  border: 2px solid #cbd5e1;
+  background: white;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  -moz-appearance: textfield;
+}
+.input-calc::-webkit-outer-spin-button,
+.input-calc::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+.input-calc:focus {
+  border-color: var(--azul-claro);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+/* Botón de voz pulsando */
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0   rgba(239, 68, 68, 0.5); }
+  70%  { box-shadow: 0 0 0 16px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0   rgba(239, 68, 68, 0); }
+}
+.btn-voz-activo {
+  animation: pulse-ring 1.2s ease-out infinite;
+}
+
+/* Tarjeta de resultado de perfil */
+.card-perfil {
+  background: white;
+  border-radius: 1.25rem;
+  padding: 1.25rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  border-left: 5px solid var(--azul-claro);
+  transition: transform 0.15s;
+}
+.card-perfil:active { transform: scale(0.98); }
+
+/* Gradiente del header */
+.header-gradient {
+  background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #2563eb 100%);
+}
