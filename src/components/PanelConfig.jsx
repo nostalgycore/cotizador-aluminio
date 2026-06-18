@@ -5,7 +5,7 @@
 // en localStorage a través del callback onGuardar.
 // ──────────────────────────────────────────────────────────────
 import { useState } from "react";
-import { META_MATERIALES, OPCIONES_VIDRIO } from "../data/catalogoLocal";
+import { META_MATERIALES, OPCIONES_VIDRIO, PRECIOS_DEFAULT } from "../data/catalogoLocal";
 
 const CLAVES_PERFIL = ["jamba", "riel", "zoclo", "cerco", "traslape", "vinil"];
 
@@ -14,16 +14,29 @@ export function PanelConfig({ precios, onGuardar, onVolver }) {
   const [draft, setDraft] = useState(() => ({
     linea2: { ...precios.linea2 },
     linea3: { ...precios.linea3 },
+    vidrio: { ...(precios.vidrio ?? PRECIOS_DEFAULT.vidrio) },
   }));
   const [exito, setExito] = useState(false);
 
-  const actualizar = (linea, clave, valor) => {
+  const actualizarPerfil = (linea, clave, valor) => {
     const num = parseFloat(valor);
     setDraft(prev => ({
       ...prev,
       [linea]: {
         ...prev[linea],
         [clave]: isNaN(num) ? prev[linea][clave] : num,
+      },
+    }));
+    setExito(false);
+  };
+
+  const actualizarVidrio = (id, valor) => {
+    const num = parseFloat(valor);
+    setDraft(prev => ({
+      ...prev,
+      vidrio: {
+        ...prev.vidrio,
+        [id]: isNaN(num) ? prev.vidrio[id] : num,
       },
     }));
     setExito(false);
@@ -81,7 +94,7 @@ export function PanelConfig({ precios, onGuardar, onVolver }) {
                       step="0.5"
                       className="w-24 bg-transparent text-right font-black text-slate-800 outline-none text-base"
                       value={draft.linea2[clave]}
-                      onChange={e => actualizar("linea2", clave, e.target.value)}
+                      onChange={e => actualizarPerfil("linea2", clave, e.target.value)}
                     />
                   </div>
                 </div>
@@ -114,7 +127,7 @@ export function PanelConfig({ precios, onGuardar, onVolver }) {
                       step="0.5"
                       className="w-24 bg-transparent text-right font-black text-slate-800 outline-none text-base"
                       value={draft.linea3[clave]}
-                      onChange={e => actualizar("linea3", clave, e.target.value)}
+                      onChange={e => actualizarPerfil("linea3", clave, e.target.value)}
                     />
                   </div>
                 </div>
@@ -123,21 +136,34 @@ export function PanelConfig({ precios, onGuardar, onVolver }) {
           </div>
         </section>
 
-        {/* ── VIDRIO (info, no editable por ahora) ── */}
+        {/* ── VIDRIO (editable) ──────────────────── */}
         <section className="bg-white rounded-3xl shadow-xl p-5">
           <h2 className="text-base font-black text-cyan-700 uppercase tracking-widest mb-4 flex items-center gap-2">
             <span className="bg-cyan-100 px-2 py-0.5 rounded-lg">🪟</span>
-            Tipos de Vidrio (referencia)
+            Precios de Vidrio (por m²)
           </h2>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-3">
             {OPCIONES_VIDRIO.map(op => (
-              <div key={op.id} className="flex items-center justify-between text-sm">
-                <span className="text-slate-600 font-medium">{op.label}</span>
-                <span className="font-bold text-slate-700">${op.precio}/m²</span>
+              <div key={op.id} className="flex items-center justify-between gap-3">
+                <div className="flex-1">
+                  <p className="font-semibold text-slate-700 text-sm">{op.label}</p>
+                  <p className="text-xs text-slate-400">por m²</p>
+                </div>
+                <div className="flex items-center gap-1 bg-slate-50 border-2 border-slate-200 rounded-xl px-3 py-2 focus-within:border-cyan-400 transition">
+                  <span className="text-slate-400 font-bold text-sm">$</span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="5"
+                    className="w-24 bg-transparent text-right font-black text-slate-800 outline-none text-base"
+                    value={draft.vidrio[op.id]}
+                    onChange={e => actualizarVidrio(op.id, e.target.value)}
+                  />
+                </div>
               </div>
             ))}
           </div>
-          <p className="text-xs text-slate-400 mt-3">* Los precios de vidrio son fijos de proveedor.</p>
         </section>
 
         {/* ── BOTÓN GUARDAR ──────────────────────── */}

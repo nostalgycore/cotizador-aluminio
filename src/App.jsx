@@ -18,7 +18,15 @@ export default function App() {
   const [precios, setPrecios] = useState(() => {
     try {
       const raw = localStorage.getItem(LS_KEY);
-      if (raw) return JSON.parse(raw);
+      if (raw) {
+        const guardado = JSON.parse(raw);
+        // Migración: si no tiene clave vidrio (datos viejos), la agrega
+        return {
+          ...PRECIOS_DEFAULT,
+          ...guardado,
+          vidrio: { ...PRECIOS_DEFAULT.vidrio, ...(guardado.vidrio ?? {}) },
+        };
+      }
     } catch {}
     return PRECIOS_DEFAULT;
   });

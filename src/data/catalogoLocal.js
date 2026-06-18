@@ -21,6 +21,12 @@ export const PRECIOS_DEFAULT = {
     traslape: 190.0,
     vinil:    8.5,
   },
+  vidrio: {
+    claro_6mm:      320,
+    tintex_6mm:     380,
+    filtrasol_6mm:  420,
+    esmerilado_6mm: 350,
+  },
 };
 
 // Metadatos descriptivos (nombres, unidades) — no se editan por el usuario
@@ -33,12 +39,12 @@ export const META_MATERIALES = {
   vinil:    { nombre2: "Vinil de Hule",         nombre3: "Vinil de Hule",         unidad: "metro" },
 };
 
-// ── Opciones de vidrio ────────────────────────────────────────
+// ── Opciones de vidrio (solo metadatos; precios en PRECIOS_DEFAULT.vidrio) ───
 export const OPCIONES_VIDRIO = [
-  { id: "claro_6mm",      label: "Claro 6mm",      precio: 320 },
-  { id: "tintex_6mm",     label: "Tintex 6mm",     precio: 380 },
-  { id: "filtrasol_6mm",  label: "Filtrasol 6mm",  precio: 420 },
-  { id: "esmerilado_6mm", label: "Esmerilado 6mm", precio: 350 },
+  { id: "claro_6mm",      label: "Vidrio Claro 6mm"      },
+  { id: "tintex_6mm",     label: "Vidrio Tintex 6mm"     },
+  { id: "filtrasol_6mm",  label: "Vidrio Filtrasol 6mm"  },
+  { id: "esmerilado_6mm", label: "Vidrio Esmerilado 6mm" },
 ];
 
 /**

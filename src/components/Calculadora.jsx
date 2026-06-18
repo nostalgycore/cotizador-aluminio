@@ -53,8 +53,11 @@ export function Calculadora({ precios = PRECIOS_DEFAULT, onAbrirConfig }) {
     setError("");
     try {
       const res = calcularMaterialGlobal({ ventanas, tramoCm, llevaVidrio });
-      // Pasa los precios dinámicos del estado global (localStorage)
-      const c = calcularCostosGlobal(res, llevaVidrio ? tipoVidrio : null, lineaPulg, precios);
+      // Enriquece tipoVidrio con el precio dinámico guardado en precios
+      const tipoVidrioConPrecio = llevaVidrio
+        ? { ...tipoVidrio, precio: precios.vidrio?.[tipoVidrio.id] ?? tipoVidrio.precio ?? 0 }
+        : null;
+      const c = calcularCostosGlobal(res, tipoVidrioConPrecio, lineaPulg, precios);
       setResultado(res);
       setCostos(c);
       setTimeout(() =>
@@ -265,21 +268,24 @@ export function Calculadora({ precios = PRECIOS_DEFAULT, onAbrirConfig }) {
                   Tipo de Vidrio
                 </p>
                 <div className="grid grid-cols-2 gap-2">
-                  {OPCIONES_VIDRIO.map((op) => (
-                    <button
-                      key={op.id}
-                      onClick={() => setTipoVidrio(op)}
-                      className={`py-3 px-3 rounded-xl text-sm font-bold transition active:scale-95 text-left
-                        ${tipoVidrio.id === op.id
-                          ? "bg-cyan-600 text-white shadow"
-                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
-                    >
-                      <span className="block">{op.label}</span>
-                      <span className={`text-xs font-normal ${tipoVidrio.id === op.id ? "text-cyan-100" : "text-slate-400"}`}>
-                        ${op.precio}/m²
-                      </span>
-                    </button>
-                  ))}
+                  {OPCIONES_VIDRIO.map((op) => {
+                    const precioActual = precios.vidrio?.[op.id] ?? op.precio ?? 0;
+                    return (
+                      <button
+                        key={op.id}
+                        onClick={() => setTipoVidrio(op)}
+                        className={`py-3 px-3 rounded-xl text-sm font-bold transition active:scale-95 text-left
+                          ${tipoVidrio.id === op.id
+                            ? "bg-cyan-600 text-white shadow"
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+                      >
+                        <span className="block">{op.label}</span>
+                        <span className={`text-xs font-normal ${tipoVidrio.id === op.id ? "text-cyan-100" : "text-slate-400"}`}>
+                          ${precioActual}/m²
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
