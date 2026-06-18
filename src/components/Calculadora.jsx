@@ -1,11 +1,11 @@
 // src/components/Calculadora.jsx
 // ──────────────────────────────────────────────────────────────
 // Formulario multi-ventana → resultado global consolidado.
-// Cálculo correcto de tramos, mano de obra y vidrio con opciones.
+// Soporta Línea de Aluminio 2" y 3".
 // ──────────────────────────────────────────────────────────────
 import { useState } from "react";
 import { calcularMaterialGlobal, LONGITUDES_TRAMO } from "../utils/calcularMaterial";
-import { calcularCostosGlobal, MATERIALES, OPCIONES_VIDRIO } from "../data/catalogoLocal";
+import { calcularCostosGlobal, OPCIONES_VIDRIO } from "../data/catalogoLocal";
 import { generarPDF } from "../utils/generarPDF";
 
 const generarFolio = () => {
@@ -32,13 +32,14 @@ export function Calculadora() {
   // ── Estado formulario ──────────────────────────────────────
   const [ventanas, setVentanas] = useState([nuevaVentana(1)]);
   const [tramoCm, setTramoCm] = useState(LONGITUDES_TRAMO.SEIS_METROS);
+  const [lineaPulg, setLineaPulg] = useState("2");
   const [llevaVidrio, setLlevaVidrio] = useState(false);
   const [tipoVidrio, setTipoVidrio] = useState(OPCIONES_VIDRIO[0]);
   const [pctManoObra, setPctManoObra] = useState("30");
 
   // ── Estado resultados ──────────────────────────────────────
-  const [resultado, setResultado] = useState(null);   // calcularMaterialGlobal()
-  const [costos, setCostos] = useState(null);   // calcularCostosGlobal()
+  const [resultado, setResultado] = useState(null);
+  const [costos, setCostos] = useState(null);
   const [error, setError] = useState("");
   const [folio] = useState(generarFolio);
 
@@ -63,7 +64,7 @@ export function Calculadora() {
         tramoCm,
         llevaVidrio,
       });
-      const c = calcularCostosGlobal(res, llevaVidrio ? tipoVidrio : null);
+      const c = calcularCostosGlobal(res, llevaVidrio ? tipoVidrio : null, lineaPulg);
       setResultado(res);
       setCostos(c);
       setTimeout(() =>
@@ -77,6 +78,7 @@ export function Calculadora() {
   const handleLimpiar = () => {
     setVentanas([nuevaVentana(1)]);
     setLlevaVidrio(false);
+    setLineaPulg("2");
     setResultado(null);
     setCostos(null);
     setError("");
@@ -99,6 +101,9 @@ export function Calculadora() {
   const granTotal = costos ? +(costos.subtotalMateriales + costoManoObra).toFixed(2) : 0;
 
   const listo = ventanas.every(v => v.ancho && v.alto);
+
+  // Etiqueta de línea para resumen
+  const etiquetaLinea = lineaPulg === "3" ? 'Línea 3"' : 'Línea 2"';
 
   // ── Render ─────────────────────────────────────────────────
   return (
@@ -132,6 +137,30 @@ export function Calculadora() {
             <div className="bg-blue-600 text-white rounded-2xl p-4 text-center">
               <span className="text-3xl">🪟</span>
               <p className="font-black text-lg mt-1">Ventana Corrediza</p>
+            </div>
+          </div>
+
+          {/* Línea de aluminio */}
+          <div className="mb-6">
+            <p className="text-base font-bold text-slate-600 text-center mb-2">
+              📐 Línea de Aluminio
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { val: "2", label: '2 Pulgadas' },
+                { val: "3", label: '3 Pulgadas' },
+              ].map(({ val, label }) => (
+                <button
+                  key={val}
+                  onClick={() => setLineaPulg(val)}
+                  className={`py-4 rounded-2xl text-lg font-bold transition active:scale-95
+                    ${lineaPulg === val
+                      ? "bg-indigo-600 text-white shadow-md"
+                      : "bg-slate-100 text-slate-600"}`}
+                >
+                  {val === lineaPulg ? "✅ " : ""}{label}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -313,7 +342,7 @@ export function Calculadora() {
                 {resultado.totalVentanas} Ventana{resultado.totalVentanas > 1 ? "s" : ""} — Lista Global
               </h2>
               <p className="text-blue-100 text-sm mt-1">
-                Tramo {tramoCm === 600 ? "6.00 m" : "4.60 m"}
+                {etiquetaLinea} · Tramo {tramoCm === 600 ? "6.00 m" : "4.60 m"}
                 {llevaVidrio ? ` · Vidrio ${tipoVidrio.label}` : ""}
               </p>
 
@@ -349,7 +378,7 @@ export function Calculadora() {
 
               {/* Perfiles de aluminio */}
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
-                🔩 Perfiles de Aluminio
+                🔩 Perfiles de Aluminio — {etiquetaLinea}
               </p>
               <div className="flex flex-col gap-2 mb-5">
                 {Object.entries(costos.detalle)
@@ -359,7 +388,7 @@ export function Calculadora() {
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <span className="text-xl">{ICONOS_PERFIL[clave]}</span>
-                          <span className="font-bold text-slate-800">{NOMBRES_PERFIL[clave]}</span>
+                          <span className="font-bold text-slate-800">{det.nombre}</span>
                         </div>
                         <span className="text-green-700 font-black text-base">
                           ${det.costo.toLocaleString("es-MX", { minimumFractionDigits: 2 })}
@@ -416,7 +445,7 @@ export function Calculadora() {
                     <div>
                       <p className="font-bold text-slate-700">Vinil de Hule</p>
                       <p className="text-sm text-slate-400">
-                        {costos.detalle.vinil.metros} m · ${MATERIALES.vinil.precioUnitario}/m
+                        {costos.detalle.vinil.metros} m · ${costos.detalle.vinil.precioUnitario}/m
                       </p>
                     </div>
                     <span className="text-green-700 font-black text-lg">

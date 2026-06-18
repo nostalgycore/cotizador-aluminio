@@ -1,18 +1,30 @@
 // src/data/catalogoLocal.js
 // ──────────────────────────────────────────────────────────────
-// Catálogo de precios y tipos de vidrio.
-// Felpa eliminada. Vinil solo si lleva vidrio.
+// Catálogo de precios por Línea de Aluminio (2" y 3") y tipos de vidrio.
 // ──────────────────────────────────────────────────────────────
 
-// ── Precios de perfiles y accesorios ─────────────────────────
-export const MATERIALES = {
-  jamba:    { nombre: 'Jamba de Aluminio 2"', precioUnitario: 185.0, unidad: "tramo" },
-  riel:     { nombre: "Riel de Aluminio",      precioUnitario: 175.0, unidad: "tramo" },
-  zoclo:    { nombre: "Zoclo de Hoja",         precioUnitario: 160.0, unidad: "tramo" },
-  cerco:    { nombre: "Cerco de Hoja",         precioUnitario: 155.0, unidad: "tramo" },
-  traslape: { nombre: "Traslape",              precioUnitario: 145.0, unidad: "tramo" },
-  vinil:    { nombre: "Vinil de Hule",         precioUnitario: 8.5,   unidad: "metro" },
+// ── Catálogos de perfiles por línea ──────────────────────────
+export const CATALOGOS_LINEA = {
+  "2": {
+    jamba:    { nombre: 'Jamba de Aluminio 2"', precioUnitario: 185.0, unidad: "tramo" },
+    riel:     { nombre: 'Riel de Aluminio 2"',  precioUnitario: 175.0, unidad: "tramo" },
+    zoclo:    { nombre: 'Zoclo de Hoja 2"',     precioUnitario: 160.0, unidad: "tramo" },
+    cerco:    { nombre: 'Cerco de Hoja 2"',     precioUnitario: 155.0, unidad: "tramo" },
+    traslape: { nombre: "Traslape 2\"",          precioUnitario: 145.0, unidad: "tramo" },
+    vinil:    { nombre: "Vinil de Hule",         precioUnitario: 8.5,   unidad: "metro" },
+  },
+  "3": {
+    jamba:    { nombre: 'Jamba de Aluminio 3"', precioUnitario: 245.0, unidad: "tramo" },
+    riel:     { nombre: 'Riel de Aluminio 3"',  precioUnitario: 230.0, unidad: "tramo" },
+    zoclo:    { nombre: 'Zoclo de Hoja 3"',     precioUnitario: 210.0, unidad: "tramo" },
+    cerco:    { nombre: 'Cerco de Hoja 3"',     precioUnitario: 200.0, unidad: "tramo" },
+    traslape: { nombre: 'Traslape 3"',           precioUnitario: 190.0, unidad: "tramo" },
+    vinil:    { nombre: "Vinil de Hule",         precioUnitario: 8.5,   unidad: "metro" },
+  },
 };
+
+// Alias para compatibilidad (línea 2" por defecto)
+export const MATERIALES = CATALOGOS_LINEA["2"];
 
 // ── Opciones de vidrio ────────────────────────────────────────
 export const OPCIONES_VIDRIO = [
@@ -23,20 +35,23 @@ export const OPCIONES_VIDRIO = [
 ];
 
 /**
- * Calcula el costo total cruzando el resultado global con los precios.
+ * Calcula el costo total cruzando el resultado global con los precios
+ * del catálogo de la línea de aluminio seleccionada.
  *
  * @param {Object}      resultado   – Output de calcularMaterialGlobal()
  * @param {Object|null} tipoVidrio  – Opción seleccionada de OPCIONES_VIDRIO
+ * @param {"2"|"3"}     lineaPulg   – Línea de aluminio seleccionada
  * @returns {{ detalle: Object, subtotalMateriales: number }}
  */
-export function calcularCostosGlobal(resultado, tipoVidrio = null) {
+export function calcularCostosGlobal(resultado, tipoVidrio = null, lineaPulg = "2") {
   const { perfiles, vinil, vidrio } = resultado;
+  const catalogo = CATALOGOS_LINEA[lineaPulg] ?? CATALOGOS_LINEA["2"];
   const detalle = {};
   let subtotalMateriales = 0;
 
   // Perfiles de aluminio (precio por tramo)
   for (const [clave, perfil] of Object.entries(perfiles)) {
-    const mat = MATERIALES[clave];
+    const mat = catalogo[clave];
     if (!mat) continue;
     const costo = perfil.tramos * mat.precioUnitario;
     detalle[clave] = {
@@ -53,7 +68,7 @@ export function calcularCostosGlobal(resultado, tipoVidrio = null) {
 
   // Vinil (solo si lleva vidrio)
   if (vinil) {
-    const mat = MATERIALES.vinil;
+    const mat = catalogo.vinil;
     const costo = vinil.metrosTotales * mat.precioUnitario;
     detalle.vinil = {
       nombre:         mat.nombre,
