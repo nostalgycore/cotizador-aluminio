@@ -2,10 +2,11 @@
 // ──────────────────────────────────────────────────────────────
 // Formulario multi-ventana → resultado global consolidado.
 // Soporta Línea de Aluminio 2" y 3".
+// Recibe `precios` desde App (localStorage) para cálculos dinámicos.
 // ──────────────────────────────────────────────────────────────
 import { useState } from "react";
 import { calcularMaterialGlobal, LONGITUDES_TRAMO } from "../utils/calcularMaterial";
-import { calcularCostosGlobal, OPCIONES_VIDRIO } from "../data/catalogoLocal";
+import { calcularCostosGlobal, OPCIONES_VIDRIO, PRECIOS_DEFAULT } from "../data/catalogoLocal";
 import { generarPDF } from "../utils/generarPDF";
 
 const generarFolio = () => {
@@ -16,19 +17,11 @@ const generarFolio = () => {
 
 const nuevaVentana = (id) => ({ id, ancho: "", alto: "", etiqueta: "" });
 
-const NOMBRES_PERFIL = {
-  jamba: 'Jamba 2"',
-  riel: "Riel",
-  zoclo: "Zoclo",
-  cerco: "Cerco",
-  traslape: "Traslape",
-};
-
 const ICONOS_PERFIL = {
   jamba: "🔳", riel: "➖", zoclo: "🔲", cerco: "🔲", traslape: "⬜",
 };
 
-export function Calculadora() {
+export function Calculadora({ precios = PRECIOS_DEFAULT, onAbrirConfig }) {
   // ── Estado formulario ──────────────────────────────────────
   const [ventanas, setVentanas] = useState([nuevaVentana(1)]);
   const [tramoCm, setTramoCm] = useState(LONGITUDES_TRAMO.SEIS_METROS);
@@ -59,12 +52,9 @@ export function Calculadora() {
   const handleCalcular = () => {
     setError("");
     try {
-      const res = calcularMaterialGlobal({
-        ventanas,
-        tramoCm,
-        llevaVidrio,
-      });
-      const c = calcularCostosGlobal(res, llevaVidrio ? tipoVidrio : null, lineaPulg);
+      const res = calcularMaterialGlobal({ ventanas, tramoCm, llevaVidrio });
+      // Pasa los precios dinámicos del estado global (localStorage)
+      const c = calcularCostosGlobal(res, llevaVidrio ? tipoVidrio : null, lineaPulg, precios);
       setResultado(res);
       setCostos(c);
       setTimeout(() =>
@@ -101,8 +91,6 @@ export function Calculadora() {
   const granTotal = costos ? +(costos.subtotalMateriales + costoManoObra).toFixed(2) : 0;
 
   const listo = ventanas.every(v => v.ancho && v.alto);
-
-  // Etiqueta de línea para resumen
   const etiquetaLinea = lineaPulg === "3" ? 'Línea 3"' : 'Línea 2"';
 
   // ── Render ─────────────────────────────────────────────────
@@ -110,7 +98,7 @@ export function Calculadora() {
     <div className="min-h-screen bg-slate-100 pb-20">
 
       {/* HEADER */}
-      <header className="header-gradient text-white px-5 pt-10 pb-8">
+      <header className="header-gradient text-white px-5 pt-10 pb-8 relative">
         <div className="max-w-md mx-auto">
           <p className="text-blue-200 text-sm font-medium mb-1 uppercase tracking-widest">
             Herrería &amp; Aluminio
@@ -122,6 +110,15 @@ export function Calculadora() {
             Calcula el material global reutilizando sobrantes entre ventanas.
           </p>
         </div>
+
+        {/* Botón de engrane – acceso admin */}
+        <button
+          onClick={onAbrirConfig}
+          title="Configuración de precios"
+          className="absolute top-5 right-5 w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-xl transition active:scale-90"
+        >
+          ⚙️
+        </button>
       </header>
 
       <div className="max-w-md mx-auto px-4 -mt-4">
@@ -147,8 +144,8 @@ export function Calculadora() {
             </p>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { val: "2", label: '2 Pulgadas' },
-                { val: "3", label: '3 Pulgadas' },
+                { val: "2", label: "2 Pulgadas" },
+                { val: "3", label: "3 Pulgadas" },
               ].map(({ val, label }) => (
                 <button
                   key={val}
@@ -158,7 +155,7 @@ export function Calculadora() {
                       ? "bg-indigo-600 text-white shadow-md"
                       : "bg-slate-100 text-slate-600"}`}
                 >
-                  {val === lineaPulg ? "✅ " : ""}{label}
+                  {lineaPulg === val ? "✅ " : ""}{label}
                 </button>
               ))}
             </div>
@@ -415,7 +412,7 @@ export function Calculadora() {
                         </div>
                       </div>
 
-                      {/* Alerta: tramo subutilizado (desperdicio > 500 cm) */}
+                      {/* Alerta: tramo subutilizado */}
                       {det.cmDesperdicio > 500 && (
                         <div className="mt-2 bg-orange-50 border border-orange-200 rounded-xl p-2 flex items-start gap-2">
                           <span className="text-base leading-tight">⚠️</span>
@@ -435,7 +432,7 @@ export function Calculadora() {
                   ))}
               </div>
 
-              {/* Vinil (solo si hay vidrio) */}
+              {/* Vinil */}
               {costos.detalle.vinil && (
                 <>
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
@@ -462,7 +459,6 @@ export function Calculadora() {
                     🪟 Vidrio
                   </p>
                   <div className="bg-cyan-50 border-2 border-cyan-100 rounded-2xl p-4 mb-5">
-                    {/* Precio total */}
                     <div className="flex items-center justify-between mb-3">
                       <div>
                         <p className="font-bold text-cyan-800">{costos.detalle.vidrio.nombre}</p>
@@ -474,8 +470,6 @@ export function Calculadora() {
                         ${costos.detalle.vidrio.costo.toLocaleString("es-MX", { minimumFractionDigits: 2 })}
                       </span>
                     </div>
-
-                    {/* Hojas a comprar */}
                     <div className="bg-white rounded-xl p-3 border border-cyan-200 flex items-center justify-between">
                       <div>
                         <p className="text-xs font-bold text-cyan-600 uppercase tracking-wide">

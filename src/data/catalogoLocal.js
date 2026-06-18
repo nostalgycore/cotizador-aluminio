@@ -1,30 +1,37 @@
 // src/data/catalogoLocal.js
 // ──────────────────────────────────────────────────────────────
 // Catálogo de precios por Línea de Aluminio (2" y 3") y tipos de vidrio.
+// Los precios por defecto se usan si no existe nada en localStorage.
 // ──────────────────────────────────────────────────────────────
 
-// ── Catálogos de perfiles por línea ──────────────────────────
-export const CATALOGOS_LINEA = {
-  "2": {
-    jamba:    { nombre: 'Jamba de Aluminio 2"', precioUnitario: 185.0, unidad: "tramo" },
-    riel:     { nombre: 'Riel de Aluminio 2"',  precioUnitario: 175.0, unidad: "tramo" },
-    zoclo:    { nombre: 'Zoclo de Hoja 2"',     precioUnitario: 160.0, unidad: "tramo" },
-    cerco:    { nombre: 'Cerco de Hoja 2"',     precioUnitario: 155.0, unidad: "tramo" },
-    traslape: { nombre: "Traslape 2\"",          precioUnitario: 145.0, unidad: "tramo" },
-    vinil:    { nombre: "Vinil de Hule",         precioUnitario: 8.5,   unidad: "metro" },
+export const PRECIOS_DEFAULT = {
+  linea2: {
+    jamba:    185.0,
+    riel:     175.0,
+    zoclo:    160.0,
+    cerco:    155.0,
+    traslape: 145.0,
+    vinil:    8.5,
   },
-  "3": {
-    jamba:    { nombre: 'Jamba de Aluminio 3"', precioUnitario: 245.0, unidad: "tramo" },
-    riel:     { nombre: 'Riel de Aluminio 3"',  precioUnitario: 230.0, unidad: "tramo" },
-    zoclo:    { nombre: 'Zoclo de Hoja 3"',     precioUnitario: 210.0, unidad: "tramo" },
-    cerco:    { nombre: 'Cerco de Hoja 3"',     precioUnitario: 200.0, unidad: "tramo" },
-    traslape: { nombre: 'Traslape 3"',           precioUnitario: 190.0, unidad: "tramo" },
-    vinil:    { nombre: "Vinil de Hule",         precioUnitario: 8.5,   unidad: "metro" },
+  linea3: {
+    jamba:    245.0,
+    riel:     230.0,
+    zoclo:    210.0,
+    cerco:    200.0,
+    traslape: 190.0,
+    vinil:    8.5,
   },
 };
 
-// Alias para compatibilidad (línea 2" por defecto)
-export const MATERIALES = CATALOGOS_LINEA["2"];
+// Metadatos descriptivos (nombres, unidades) — no se editan por el usuario
+export const META_MATERIALES = {
+  jamba:    { nombre2: 'Jamba de Aluminio 2"', nombre3: 'Jamba de Aluminio 3"', unidad: "tramo" },
+  riel:     { nombre2: 'Riel de Aluminio 2"',  nombre3: 'Riel de Aluminio 3"',  unidad: "tramo" },
+  zoclo:    { nombre2: 'Zoclo de Hoja 2"',     nombre3: 'Zoclo de Hoja 3"',     unidad: "tramo" },
+  cerco:    { nombre2: 'Cerco de Hoja 2"',     nombre3: 'Cerco de Hoja 3"',     unidad: "tramo" },
+  traslape: { nombre2: 'Traslape 2"',           nombre3: 'Traslape 3"',           unidad: "tramo" },
+  vinil:    { nombre2: "Vinil de Hule",         nombre3: "Vinil de Hule",         unidad: "metro" },
+};
 
 // ── Opciones de vidrio ────────────────────────────────────────
 export const OPCIONES_VIDRIO = [
@@ -35,29 +42,31 @@ export const OPCIONES_VIDRIO = [
 ];
 
 /**
- * Calcula el costo total cruzando el resultado global con los precios
- * del catálogo de la línea de aluminio seleccionada.
+ * Calcula el costo total cruzando el resultado global con los precios dinámicos.
  *
  * @param {Object}      resultado   – Output de calcularMaterialGlobal()
  * @param {Object|null} tipoVidrio  – Opción seleccionada de OPCIONES_VIDRIO
  * @param {"2"|"3"}     lineaPulg   – Línea de aluminio seleccionada
+ * @param {Object}      precios     – Estado de precios desde localStorage/App
  * @returns {{ detalle: Object, subtotalMateriales: number }}
  */
-export function calcularCostosGlobal(resultado, tipoVidrio = null, lineaPulg = "2") {
+export function calcularCostosGlobal(resultado, tipoVidrio = null, lineaPulg = "2", precios = PRECIOS_DEFAULT) {
   const { perfiles, vinil, vidrio } = resultado;
-  const catalogo = CATALOGOS_LINEA[lineaPulg] ?? CATALOGOS_LINEA["2"];
+  const catalogoLinea = lineaPulg === "3" ? precios.linea3 : precios.linea2;
+  const metaLinea = lineaPulg === "3" ? "nombre3" : "nombre2";
   const detalle = {};
   let subtotalMateriales = 0;
 
   // Perfiles de aluminio (precio por tramo)
   for (const [clave, perfil] of Object.entries(perfiles)) {
-    const mat = catalogo[clave];
-    if (!mat) continue;
-    const costo = perfil.tramos * mat.precioUnitario;
+    const precioUnitario = catalogoLinea[clave];
+    const meta = META_MATERIALES[clave];
+    if (precioUnitario == null || !meta) continue;
+    const costo = perfil.tramos * precioUnitario;
     detalle[clave] = {
-      nombre:         mat.nombre,
-      precioUnitario: mat.precioUnitario,
-      unidad:         mat.unidad,
+      nombre:         meta[metaLinea],
+      precioUnitario,
+      unidad:         meta.unidad,
       tramos:         perfil.tramos,
       cmTotales:      perfil.cmTotales,
       cmDesperdicio:  perfil.cmDesperdicio,
@@ -68,12 +77,12 @@ export function calcularCostosGlobal(resultado, tipoVidrio = null, lineaPulg = "
 
   // Vinil (solo si lleva vidrio)
   if (vinil) {
-    const mat = catalogo.vinil;
-    const costo = vinil.metrosTotales * mat.precioUnitario;
+    const precioUnitario = catalogoLinea.vinil;
+    const costo = vinil.metrosTotales * precioUnitario;
     detalle.vinil = {
-      nombre:         mat.nombre,
-      precioUnitario: mat.precioUnitario,
-      unidad:         mat.unidad,
+      nombre:         META_MATERIALES.vinil[metaLinea],
+      precioUnitario,
+      unidad:         "metro",
       metros:         vinil.metrosTotales,
       costo:          +costo.toFixed(2),
     };
