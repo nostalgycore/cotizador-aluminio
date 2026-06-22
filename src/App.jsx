@@ -6,7 +6,7 @@
 //  - Vista activa: "calculadora" | "config"
 //  - Modal de PIN de administrador
 // ──────────────────────────────────────────────────────────────
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Calculadora } from "./components/Calculadora";
 import { PanelConfig } from "./components/PanelConfig";
 import { PRECIOS_DEFAULT } from "./data/catalogoLocal";
@@ -53,7 +53,88 @@ function preciosARows(precios) {
 
 // ──────────────────────────────────────────────────────────────
 
+// ── Componente: Banner de instalación PWA ─────────────────────────────────
+function InstallBanner({ onInstall, onDismiss }) {
+  return (
+    <div
+      className="fixed top-0 inset-x-0 z-[60] flex items-center justify-between gap-3 px-4 py-2.5"
+      style={{
+        background: "linear-gradient(90deg, #1e40af 0%, #0284c7 100%)",
+        boxShadow: "0 2px 12px rgba(2,132,199,0.45)",
+      }}
+    >
+      {/* Icono + texto */}
+      <div className="flex items-center gap-2.5 min-w-0">
+        <span className="text-2xl shrink-0" aria-hidden="true">📲</span>
+        <div className="min-w-0">
+          <p className="text-white text-sm font-bold leading-tight truncate">
+            Instalar App
+          </p>
+          <p className="text-sky-200 text-xs leading-tight truncate">
+            Accede rápido desde tu pantalla de inicio
+          </p>
+        </div>
+      </div>
+
+      {/* Acciones */}
+      <div className="flex items-center gap-2 shrink-0">
+        <button
+          onClick={onInstall}
+          className="bg-white text-blue-700 text-xs font-black px-3.5 py-1.5 rounded-full shadow hover:bg-sky-50 active:scale-95 transition-transform"
+        >
+          Instalar
+        </button>
+        <button
+          onClick={onDismiss}
+          aria-label="Cerrar banner"
+          className="text-sky-200 hover:text-white transition-colors text-xl leading-none"
+        >
+          ×
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+
 export default function App() {
+  // ── PWA: Install Prompt ──────────────────────────────────────
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
+
+  useEffect(() => {
+    const handler = (e) => {
+      // Prevent default mini-infobar so we control the UX
+      e.preventDefault();
+      setInstallPrompt(e);
+      setShowInstallBanner(true);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+
+    // Si ya está instalada como app, oculta el banner
+    window.addEventListener("appinstalled", () => {
+      setShowInstallBanner(false);
+      setInstallPrompt(null);
+    });
+
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const handleInstall = useCallback(async () => {
+    if (!installPrompt) return;
+    await installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    console.log("[PWA] Resultado de instalación:", outcome);
+    // Independientemente del resultado, limpia el prompt
+    setInstallPrompt(null);
+    setShowInstallBanner(false);
+  }, [installPrompt]);
+
+  const handleDismissInstall = useCallback(() => {
+    setShowInstallBanner(false);
+  }, []);
+
   // ── Precios: inicia con caché local mientras carga Supabase ──
   const [precios, setPrecios] = useState(() => {
     try {
@@ -157,6 +238,13 @@ export default function App() {
   // ── Render ───────────────────────────────────────────────────
   return (
     <>
+      {/* Banner PWA de instalación */}
+      {showInstallBanner && (
+        <InstallBanner
+          onInstall={handleInstall}
+          onDismiss={handleDismissInstall}
+        />
+      )}
       {/* Banner de carga / error de conexión */}
       {cargando && (
         <div className="fixed top-0 inset-x-0 z-50 bg-indigo-600 text-white text-xs font-semibold py-1.5 text-center">
