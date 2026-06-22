@@ -53,8 +53,20 @@ function preciosARows(precios) {
 
 // ──────────────────────────────────────────────────────────────
 
-// ── Componente: Banner de instalación PWA ─────────────────────────────────
-function InstallBanner({ onInstall, onDismiss }) {
+// ── Utilidades de detección PWA ───────────────────────────────
+function esIOS() {
+  return /iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+
+function estaInstalada() {
+  return (
+    navigator.standalone === true ||
+    window.matchMedia("(display-mode: standalone)").matches
+  );
+}
+
+// ── Componente: Banner Android (beforeinstallprompt) ──────────
+function InstallBannerAndroid({ onInstall, onDismiss }) {
   return (
     <div
       className="fixed top-0 inset-x-0 z-[60] flex items-center justify-between gap-3 px-4 py-2.5"
@@ -96,29 +108,94 @@ function InstallBanner({ onInstall, onDismiss }) {
   );
 }
 
+// ── Componente: Banner iOS (instrucciones manuales Safari) ─────
+function InstallBannerIOS({ onDismiss }) {
+  return (
+    <div
+      className="fixed bottom-0 inset-x-0 z-[60] px-4 py-3"
+      style={{
+        background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)",
+        boxShadow: "0 -2px 16px rgba(2,132,199,0.35)",
+      }}
+    >
+      {/* Flecha apuntando al botón de compartir de Safari */}
+      <div className="flex items-start gap-3">
+        {/* Ícono */}
+        <span className="text-2xl shrink-0 mt-0.5" aria-hidden="true">🍎</span>
+
+        {/* Texto */}
+        <div className="flex-1 min-w-0">
+          <p className="text-white text-sm font-bold leading-snug">
+            Instalar en tu iPhone
+          </p>
+          <p className="text-sky-300 text-xs leading-snug mt-0.5">
+            Toca el ícono{" "}
+            <span className="inline-flex items-center gap-0.5 bg-sky-800 text-sky-200 font-semibold px-1.5 py-0.5 rounded text-[11px]">
+              ⬆ Compartir
+            </span>{" "}
+            en la barra de Safari y selecciona{" "}
+            <span className="font-semibold text-white">"Agregar a inicio"</span>.
+          </p>
+        </div>
+
+        {/* Cerrar */}
+        <button
+          onClick={onDismiss}
+          aria-label="Cerrar instrucciones"
+          className="text-sky-400 hover:text-white transition-colors text-xl leading-none shrink-0 mt-0.5"
+        >
+          ×
+        </button>
+      </div>
+
+      {/* Indicador visual — flecha apunta a la barra inferior de Safari */}
+      <div className="flex justify-center mt-2">
+        <span className="text-sky-500 text-xs animate-bounce">▼</span>
+      </div>
+    </div>
+  );
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
 
 export default function App() {
-  // ── PWA: Install Prompt ──────────────────────────────────────
+  // ── PWA: Install Prompt (Android/Chrome) ────────────────────
   const [installPrompt, setInstallPrompt] = useState(null);
-  const [showInstallBanner, setShowInstallBanner] = useState(false);
+  const [showAndroidBanner, setShowAndroidBanner] = useState(false);
+
+  // ── PWA: Banner iOS (instrucciones manuales Safari) ─────────
+  // Solo se muestra si: es iOS + no está instalada + no fue descartada
+  const [showIOSBanner, setShowIOSBanner] = useState(() => {
+    if (typeof window === "undefined") return false;
+    if (estaInstalada()) return false;          // ya instalada → no mostrar
+    if (!esIOS()) return false;                  // no es iOS → no mostrar
+    return true;                                 // iOS sin instalar → mostrar
+  });
 
   useEffect(() => {
+    // Si la app ya está instalada (standalone), nunca mostrar banners
+    if (estaInstalada()) return;
+
+    // Android/Chrome: escuchar beforeinstallprompt
     const handler = (e) => {
-      // Prevent default mini-infobar so we control the UX
       e.preventDefault();
       setInstallPrompt(e);
-      setShowInstallBanner(true);
+      setShowAndroidBanner(true);
     };
     window.addEventListener("beforeinstallprompt", handler);
 
-    // Si ya está instalada como app, oculta el banner
-    window.addEventListener("appinstalled", () => {
-      setShowInstallBanner(false);
+    // Si el usuario instala por otra vía (ej. menú del navegador)
+    const onInstalled = () => {
+      setShowAndroidBanner(false);
+      setShowIOSBanner(false);
       setInstallPrompt(null);
-    });
+    };
+    window.addEventListener("appinstalled", onInstalled);
 
-    return () => window.removeEventListener("beforeinstallprompt", handler);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+      window.removeEventListener("appinstalled", onInstalled);
+    };
   }, []);
 
   const handleInstall = useCallback(async () => {
@@ -126,13 +203,16 @@ export default function App() {
     await installPrompt.prompt();
     const { outcome } = await installPrompt.userChoice;
     console.log("[PWA] Resultado de instalación:", outcome);
-    // Independientemente del resultado, limpia el prompt
     setInstallPrompt(null);
-    setShowInstallBanner(false);
+    setShowAndroidBanner(false);
   }, [installPrompt]);
 
-  const handleDismissInstall = useCallback(() => {
-    setShowInstallBanner(false);
+  const handleDismissAndroid = useCallback(() => {
+    setShowAndroidBanner(false);
+  }, []);
+
+  const handleDismissIOS = useCallback(() => {
+    setShowIOSBanner(false);
   }, []);
 
   // ── Precios: inicia con caché local mientras carga Supabase ──
@@ -238,11 +318,18 @@ export default function App() {
   // ── Render ───────────────────────────────────────────────────
   return (
     <>
-      {/* Banner PWA de instalación */}
-      {showInstallBanner && (
-        <InstallBanner
+      {/* Banner PWA: Android (beforeinstallprompt) */}
+      {showAndroidBanner && (
+        <InstallBannerAndroid
           onInstall={handleInstall}
-          onDismiss={handleDismissInstall}
+          onDismiss={handleDismissAndroid}
+        />
+      )}
+
+      {/* Banner PWA: iOS (instrucciones manuales Safari) */}
+      {showIOSBanner && (
+        <InstallBannerIOS
+          onDismiss={handleDismissIOS}
         />
       )}
       {/* Banner de carga / error de conexión */}
